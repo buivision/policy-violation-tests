@@ -11,23 +11,27 @@ terraform {
   }
 }
 
-# Configure providers with dummy regions/settings for planning
+# Configure providers with dummy settings to avoid auth errors during plan.
 provider "aws" {
-  region = "us-west-2"
+  region              = "us-west-2"
+  access_key          = "mock"
+  secret_key          = "mock"
+  skip_credentials_validation = true
+  skip_metadata_api_check     = true
 }
 
 provider "azurerm" {
   features {}
+  skip_provider_registration = true
+  use_cli                    = false
 }
 
 # This resource will FAIL the S3 encryption policy.
-# It is missing the server_side_encryption_configuration block.
 resource "aws_s3_bucket" "bad_bucket" {
-  bucket = "my-bad-bucket-for-policy-testing-12345" # Must be globally unique
+  bucket = "my-bad-bucket-for-policy-testing-98765" # Must be globally unique
 }
 
 # This resource will FAIL the instance type policy.
-# Its instance_type is "t2.micro", not "t3.*".
 resource "aws_instance" "bad_instance" {
   ami           = "ami-0c55b159cbfafe1f0" # A common us-west-2 Amazon Linux 2 AMI
   instance_type = "t2.micro"
@@ -38,16 +42,10 @@ resource "aws_instance" "bad_instance" {
 }
 
 # This resource will FAIL the Azure VM size policy.
-# Its vm_size is "Standard_DS1_v2", not "Standard_B*".
-# NOTE: To plan this, you need a resource group. We'll just reference a fake one.
-data "azurerm_resource_group" "fake" {
-  name = "fake-rg"
-}
-
 resource "azurerm_network_interface" "bad_nic" {
   name                = "bad-nic"
-  location            = data.azurerm_resource_group.fake.location
-  resource_group_name = data.azurerm_resource_group.fake.name
+  location            = "West US 2" # Hardcode location since data source is removed
+  resource_group_name = "fake-rg"   # Hardcode RG name
 
   ip_configuration {
     name                          = "internal"
@@ -58,16 +56,14 @@ resource "azurerm_network_interface" "bad_nic" {
 
 resource "azurerm_linux_virtual_machine" "bad_vm" {
   name                  = "bad-vm"
-  resource_group_name   = data.azurerm_resource_group.fake.name
-  location              = data.azurerm_resource_group.fake.location
+  resource_group_name   = "fake-rg"
+  location              = "West US 2"
   size                  = "Standard_DS1_v2" # This will fail the policy
   admin_username        = "adminuser"
   network_interface_ids = [azurerm_network_interface.bad_nic.id]
 
-  admin_ssh_key {
-    username   = "adminuser"
-    public_key = "sssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPEXVu3emERLqCtXbvZijVjHfLnaXr0BF2W/+SZOewaW stephenbui@ibm.com"
-  }
+  admin_password                  = "P@ssw0rd1234!"
+  disable_password_authentication = false
 
   os_disk {
     caching              = "ReadWrite"
