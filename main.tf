@@ -64,13 +64,10 @@ resource "azurerm_linux_virtual_machine" "bad_vm" {
   admin_username        = "adminuser"
   network_interface_ids = [azurerm_network_interface.bad_nic.id]
 
-  # --- DELETED ---
-  # admin_ssh_key block is completely removed.
-
-  # --- ADDED ---
-  # Use a dummy password for authentication instead of an SSH key.
-  admin_password                  = "P@ssw0rd1234!"
-  disable_password_authentication = false
+  admin_ssh_key {
+    username   = "adminuser"
+    public_key = "sssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPEXVu3emERLqCtXbvZijVjHfLnaXr0BF2W/+SZOewaW stephenbui@ibm.com"
+  }
 
   os_disk {
     caching              = "ReadWrite"
