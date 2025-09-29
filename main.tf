@@ -24,7 +24,7 @@ provider "aws" {
 provider "azurerm" {
   features {}
   skip_provider_registration = true
-  use_cli                    = true # Explicitly disable CLI auth attempt
+  use_cli                    = false # Explicitly disable CLI auth attempt
 }
 
 # This resource will FAIL the S3 encryption policy.
