@@ -11,24 +11,25 @@ terraform {
   }
 }
 
-# Configure providers with dummy settings to avoid auth errors during plan.
+# Configure providers with dummy settings and skip validation to avoid auth errors.
 provider "aws" {
-  region              = "us-west-2"
-  access_key          = "mock"
-  secret_key          = "mock"
+  region                      = "us-west-2"
+  access_key                  = "mock"
+  secret_key                  = "mock"
   skip_credentials_validation = true
   skip_metadata_api_check     = true
+  skip_requesting_account_id  = true
 }
 
 provider "azurerm" {
   features {}
   skip_provider_registration = true
-  use_cli                    = false
+  use_cli                    = false # Explicitly disable CLI auth attempt
 }
 
 # This resource will FAIL the S3 encryption policy.
 resource "aws_s3_bucket" "bad_bucket" {
-  bucket = "my-bad-bucket-for-policy-testing-98765" # Must be globally unique
+  bucket = "my-bad-bucket-for-policy-testing-54321" # Must be globally unique
 }
 
 # This resource will FAIL the instance type policy.
@@ -44,8 +45,8 @@ resource "aws_instance" "bad_instance" {
 # This resource will FAIL the Azure VM size policy.
 resource "azurerm_network_interface" "bad_nic" {
   name                = "bad-nic"
-  location            = "West US 2" # Hardcode location since data source is removed
-  resource_group_name = "fake-rg"   # Hardcode RG name
+  location            = "West US 2"
+  resource_group_name = "fake-rg"
 
   ip_configuration {
     name                          = "internal"
